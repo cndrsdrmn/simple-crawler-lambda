@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Crawler Exchange Rates
+
+Globals:
+  Function:
+    Timeout: 5
+    MemorySize: 128
+
+Resources:
+  CrawlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: exchangerate/
+      Handler: exchangerate
+      Runtime: go1.x
+      Architectures:
+        - x86_64
+      Events:
+        CatchAll:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /crawler
+            Method: POST
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          APP_ENV: local
+          APP_DEBUG: true
+          DB_DATABASE: go_crawler
+          DB_HOST: localhost
+          DB_USERNAME: root
+          DB_PASSWORD: secret
+          DB_PORT: 3306
+          SPIDER_BANK_INDONESIA_URI: BI_URI
+          SPIDER_ORTAX_URI: ORTAX_URI
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  CrawlerAPI:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/crawler/"
+  CrawlerFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt CrawlerFunction.Arn
+  CrawlerFunctionIamRole:
+    Description: "Implicit IAM Role"
+    Value: !GetAtt CrawlerFunctionRole.Arn
